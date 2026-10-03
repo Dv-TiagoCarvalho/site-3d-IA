@@ -1,6 +1,6 @@
 # Site 3D — CYMA One
 
-**[▶ Ver o site no ar](https://dv-tiagocarvalho.github.io/site-3d/)**
+**[▶ Ver o site no ar](https://dv-tiagocarvalho.github.io/site-3d-IA/)**
 
 Site 3D com scroll para o **CYMA One**, um speaker escultural fictício. Quando o grave cai, a tinta em cima do cone explode numa fonte de arco-íris sobre fundo preto.
 
@@ -48,7 +48,7 @@ Números com count-up e troca de acabamento (Carbon, Titanium, Sand, Cobalt) dir
 - HUD de espectro na parte de baixo da tela
 - Cursor que espirra tinta e faz splat no clique
 - 808 em Web Audio no momento do drop (o som começa desligado)
-- Links diretos para um chapter, por exemplo [`?go=frozen&p=0.5&palette=Neon`](https://dv-tiagocarvalho.github.io/site-3d/?go=frozen&p=0.5&palette=Neon)
+- Links diretos para um chapter, por exemplo [`?go=frozen&p=0.5&palette=Neon`](https://dv-tiagocarvalho.github.io/site-3d-IA/?go=frozen&p=0.5&palette=Neon)
 
 ## Rodar localmente
 
