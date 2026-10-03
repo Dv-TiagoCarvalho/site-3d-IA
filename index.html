@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CYMA One — See the bass</title>
+<meta name="description" content="CYMA One, a fictional sculptural speaker. When the bass drops, the paint on its cone erupts into a rainbow fountain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#050506;--ink:#f3f2ee;--dim:rgba(243,242,238,.62);--faint:rgba(243,242,238,.34);--line:rgba(255,255,255,.13);
+  --a1:rgb(255,29,141);--a2:rgb(0,198,255);--a3:rgb(255,210,0);--pf:none;
+  --wide:'Archivo',ui-sans-serif,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gut:clamp(16px,3.6vw,56px);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--wide);overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-stopped{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0}
+a{color:inherit;text-decoration:none}
+b{font-weight:500}
+@media (pointer:fine){html,html *{cursor:none!important}}
+
+/* ---------- stage ---------- */
+#gl{position:fixed;inset:0;width:100%;height:100vh;display:block;z-index:0;transition:filter .45s ease}
+#veil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:1}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:80}
+.cursor{position:fixed;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:1.5px solid var(--a1);box-shadow:0 0 22px -6px var(--a1);pointer-events:none;z-index:90;opacity:0;transition:width .25s,height .25s,margin .25s,background-color .25s,opacity .3s}
+.cursor.on{opacity:1}
+.cursor::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--ink)}
+.cursor.hot{width:54px;height:54px;margin:-27px 0 0 -27px;background:color-mix(in srgb,var(--a1) 16%,transparent)}
+@media (pointer:coarse){.cursor{display:none}}
+
+/* ---------- type ---------- */
+.mono{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
+.xs{font-size:10px}
+.dim{color:var(--dim)}.faint{color:var(--faint)}
+.display{font-stretch:125%;font-weight:850;text-transform:uppercase;line-height:.84;letter-spacing:-.025em}
+.grad{background-image:linear-gradient(100deg,var(--a1) 0%,var(--a2) 52%,var(--a3) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px var(--gut);pointer-events:none}
+.nav>*{pointer-events:auto}
+.brand{font-stretch:125%;font-weight:850;font-size:19px;letter-spacing:.01em;display:flex;align-items:baseline;gap:9px}
+.brand span{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.22em;color:var(--dim);font-stretch:100%;text-transform:uppercase}
+.nav-ch{display:flex;gap:12px;align-items:center;color:var(--dim)}
+.nav-ch b{color:var(--ink)}
+.nav-ch i{display:block;width:64px;height:1px;background:var(--line);position:relative;overflow:hidden}
+.nav-ch i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));transform-origin:left;transform:scaleX(var(--np,0))}
+.nav-r{display:flex;gap:10px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:9px;height:34px;padding:0 15px;border:1px solid var(--line);border-radius:99px;background:rgba(10,10,12,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:border-color .3s,background-color .3s}
+.pill:hover{border-color:rgba(255,255,255,.4)}
+.pill.shop{background:var(--ink);color:#050506;border-color:transparent}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:11px}
+.eq i{width:2px;height:100%;background:var(--dim);transform-origin:bottom;transform:scaleY(.25)}
+.snd.on{border-color:color-mix(in srgb,var(--a1) 60%,transparent)}
+.snd.on .eq i{background:var(--a1);animation:eq .8s ease-in-out infinite alternate}
+.snd.on .eq i:nth-child(2){animation-delay:-.27s}.snd.on .eq i:nth-child(3){animation-delay:-.54s}
+@keyframes eq{from{transform:scaleY(.2)}to{transform:scaleY(1)}}
+
+/* ---------- chapter rail ---------- */
+.rail{position:fixed;right:var(--gut);top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:9px}
+.rail a{display:flex;align-items:center;justify-content:flex-end;gap:12px;height:24px;color:var(--dim)}
+.rail a span{opacity:0;transform:translateX(8px);transition:opacity .3s,transform .3s}
+.rail a:hover span,.rail a.act span{opacity:1;transform:none}
+.rail a.act span{color:var(--ink)}
+.rail a b{display:block;width:2px;height:24px;background:var(--line);position:relative;overflow:hidden;border-radius:2px}
+.rail a b::after{content:"";position:absolute;inset:0;background:linear-gradient(var(--a1),var(--a2),var(--a3));transform-origin:top;transform:scaleY(var(--rp,0))}
+
+/* ---------- spectrum HUD ---------- */
+.hud{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);width:min(300px,30vw);z-index:40;pointer-events:none}
+.hud-top,.hud-axis{display:flex;justify-content:space-between;color:var(--faint);font-size:9px}
+.hud-top b{color:var(--dim)}
+.bars{height:44px;display:flex;align-items:flex-end;gap:2px;margin:7px 0 6px}
+.bars i{flex:1;height:100%;border-radius:1px;transform-origin:bottom;transform:scaleY(.04);background-image:linear-gradient(90deg,var(--a1),var(--a2),var(--a3))}
+
+/* ---------- chapters ---------- */
+main{position:relative;z-index:2}
+.ch{position:relative;height:var(--h,400vh)}
+.pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;justify-content:space-between;padding:96px var(--gut) 100px;pointer-events:none;overflow:hidden;--in:0}
+.pe{pointer-events:auto}
+.fade{opacity:var(--in);transform:translateY(calc((1 - var(--in)) * 26px))}
+.tag{display:flex;gap:14px;align-items:center;margin-bottom:22px;color:var(--dim)}
+.tag b{color:var(--ink)}
+.tag i{width:28px;height:1px;background:var(--dim)}
+.head{max-width:min(620px,46vw);text-shadow:0 2px 30px rgba(0,0,0,.65)}
+.head h2,.h2{font-stretch:125%;font-weight:850;text-transform:uppercase;font-size:clamp(38px,5.3vw,96px);line-height:.86;letter-spacing:-.025em}
+.head p:not(.tag):not(.film){margin-top:22px;max-width:380px;color:var(--dim);font-size:15px;line-height:1.55}
+.film{margin-top:18px;color:var(--faint)}
+.film b{color:var(--dim)}
+.reads{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.read{min-width:0;text-shadow:0 2px 24px rgba(0,0,0,.7)}
+.read.r{text-align:right}
+.lbl{color:var(--dim);margin-bottom:10px;display:flex;gap:12px;align-items:center}
+.read.r .lbl{justify-content:flex-end}
+.big{font-stretch:125%;font-weight:800;font-size:clamp(40px,5vw,84px);line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big small{font-size:.36em;font-weight:600;letter-spacing:0;margin-left:.25em;color:var(--dim)}
+.sub{margin-top:12px}
+.sub b{color:var(--ink)}
+
+/* log meter */
+.meter{width:min(360px,36vw);margin-top:16px}
+.scale{position:relative;height:28px;border-bottom:1px solid var(--line)}
+.scale .tk{position:absolute;bottom:0;width:1px;height:7px;background:var(--faint)}
+.scale .tk.d{height:12px;background:var(--dim)}
+.scale .fill{position:absolute;left:0;bottom:-1px;height:3px;width:calc(var(--x,0) * 100%);background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));transition:width .12s}
+.scale .mk{position:absolute;bottom:0;left:calc(var(--x,0) * 100%);width:2px;height:100%;margin-left:-1px;background:var(--ink);box-shadow:0 0 16px 2px var(--a1);transition:left .12s}
+.tl{position:relative;height:16px;margin-top:6px;color:var(--faint);font-size:9px}
+.tl span{position:absolute;top:0;transform:translateX(-50%)}
+.tl span:first-child{transform:none}.tl span:last-child{transform:translateX(-100%)}
+
+/* colour dots */
+.dots{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
+.dots i{width:11px;height:11px;border-radius:50%;background:var(--c);opacity:.15;transform:scale(.7);transition:opacity .25s,transform .25s,box-shadow .25s;filter:var(--pf)}
+.dots i.on{opacity:1;transform:none;box-shadow:0 0 14px var(--c)}
+
+/* orbit dial + chips */
+.orbit{display:flex;align-items:center;gap:18px}
+.dial{width:66px;height:66px;flex:none;transform:rotate(-90deg)}
+.dial .trk{fill:none;stroke:var(--line);stroke-width:2}
+.dial .arc{fill:none;stroke:var(--a1);stroke-width:2;stroke-linecap:round;stroke-dasharray:169.65;stroke-dashoffset:169.65}
+.dial .dot{fill:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:440px;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:9px;height:36px;padding:0 14px 0 7px;border-radius:99px;border:1px solid var(--line);background:rgba(10,10,12,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:border-color .25s,background-color .25s;text-shadow:none}
+.chip s{width:22px;height:22px;border-radius:50%;background:var(--sw)}
+.chip:hover{border-color:rgba(255,255,255,.4)}
+.chip.act{border-color:var(--ink);background:rgba(255,255,255,.12)}
+
+/* glass spec card */
+.glass{background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.17);border-radius:20px;-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);box-shadow:0 30px 80px -30px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.14)}
+.card{width:min(340px,80vw);padding:20px 22px;text-align:left;text-shadow:none}
+.card .top{display:flex;justify-content:space-between;align-items:center;color:var(--dim)}
+.card h4{font-stretch:125%;font-weight:800;font-size:24px;line-height:1;text-transform:uppercase;margin:12px 0 8px;letter-spacing:-.01em}
+.card p.spec{color:var(--dim);font-size:13.5px;line-height:1.5;min-height:40px}
+.card .row{display:flex;justify-content:space-between;align-items:center;padding-top:11px;margin-top:11px;border-top:1px solid var(--line)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c,#444);filter:var(--pf);vertical-align:middle;margin-right:8px;box-shadow:0 0 10px var(--c,transparent)}
+
+/* hero */
+.hero .pin{justify-content:flex-start}
+.hero-top{display:flex;justify-content:space-between;gap:20px;color:var(--dim)}
+.hero-title{text-align:center;margin-top:5vh}
+.hero-title h1{font-size:clamp(54px,11vw,212px)}
+.hero-title p{font-size:clamp(22px,3.3vw,56px);margin-top:.32em}
+.hero-bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:auto}
+.lede{max-width:340px;color:var(--dim);font-size:15px;line-height:1.55;text-shadow:0 2px 24px rgba(0,0,0,.8)}
+.cue{display:flex;align-items:center;gap:12px;color:var(--dim)}
+.cue i{display:block;width:1px;height:38px;background:linear-gradient(var(--ink),transparent);animation:cue 1.9s ease-in-out infinite;transform-origin:top}
+@keyframes cue{0%{transform:scaleY(0)}55%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+
+/* specs */
+.specs{position:relative;padding:26vh var(--gut) 20vh;background:linear-gradient(to bottom,transparent,rgba(5,5,6,.86) 18%,rgba(5,5,6,.86) 82%,transparent)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-top:56px}
+.cell{background:rgba(8,8,10,.9);padding:30px 26px 24px;min-height:200px;display:flex;flex-direction:column;justify-content:space-between;gap:20px}
+.cell .n{font-stretch:125%;font-weight:800;font-size:clamp(42px,4.6vw,78px);line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cell .n small{font-size:.32em;font-weight:600;letter-spacing:0;margin-left:.3em;color:var(--dim)}
+.cell:nth-child(1) .n,.cell:nth-child(8) .n{background-image:linear-gradient(100deg,var(--a1),var(--a2) 52%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+
+/* buy */
+.buy{position:relative;min-height:100vh;display:flex;align-items:center;padding:16vh var(--gut)}
+.buy-inner{max-width:520px}
+.buy .h2{font-size:clamp(48px,7vw,124px)}
+.buy .lede{margin-top:22px}
+.fin{display:flex;gap:12px;margin-top:14px}
+.fin button{width:56px;height:56px;border-radius:50%;border:1px solid var(--line);padding:5px;transition:border-color .25s,transform .25s}
+.fin button:hover{transform:translateY(-2px)}
+.fin button span{display:block;width:100%;height:100%;border-radius:50%;background:var(--sw)}
+.fin button.act{border-color:var(--ink)}
+.price{display:flex;align-items:baseline;gap:16px;margin-top:30px;flex-wrap:wrap}
+.price .big{font-size:clamp(40px,4.4vw,64px)}
+.cta{display:inline-flex;align-items:center;gap:14px;height:58px;padding:0 28px;border-radius:99px;background:linear-gradient(100deg,var(--a1),var(--a2),var(--a3));color:#050506;font-stretch:125%;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.02em;margin-top:28px;transition:transform .25s,box-shadow .25s;box-shadow:0 18px 50px -18px var(--a1)}
+.cta:hover{transform:translateY(-2px)}
+.foot{position:relative;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:36px var(--gut) 104px;border-top:1px solid var(--line);color:var(--faint);background:var(--bg)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);opacity:0;z-index:70;padding:13px 18px;border-radius:12px;pointer-events:none;transition:opacity .35s,transform .35s;color:var(--ink)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:1100px){
+  .hud{width:auto;left:var(--gut);right:var(--gut);transform:none;bottom:14px}
+  .bars{height:22px;margin:4px 0 0}
+  .hud-top,.hud-axis{display:none}
+  .pin{padding-bottom:64px}
+  .rail{display:none}
+  .foot{padding-bottom:64px}
+}
+@media (max-width:760px){
+  .pin{padding:76px var(--gut) 56px}
+  .nav{padding:14px var(--gut)}
+  .nav-ch,.hide-s{display:none}
+  .head{max-width:100%}
+  .head p:not(.tag):not(.film){font-size:14px;margin-top:14px}
+  .film{display:none}
+  .reads{flex-direction:column;align-items:stretch;gap:18px}
+  .read.r{text-align:left}
+  .read.r .lbl,.dots,.chips{justify-content:flex-start;margin-left:0}
+  .meter{width:100%}
+  .hero-bottom .lede{display:none}
+  .hero-title{margin-top:3vh}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .cell{min-height:150px;padding:22px 18px 18px}
+  .big{font-size:40px}
+  .dial{width:52px;height:52px}
+}
+@media (prefers-reduced-motion:reduce){.cue i,.snd.on .eq i{animation:none}}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="veil"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="cursor" id="cursor"></div>
+
+<header class="nav">
+  <a class="brand" href="#hero" data-go="hero">CYMA <span>One</span></a>
+  <div class="nav-ch mono"><b id="navIdx">00</b><i id="navBar"></i><span id="navName">Plate</span></div>
+  <div class="nav-r">
+    <button class="pill mono snd" id="snd" aria-pressed="false"><span class="eq"><i></i><i></i><i></i></span><span id="sndLbl">Sound off</span></button>
+    <a class="pill mono shop" href="#buy" data-go="buy">Buy</a>
+  </div>
+</header>
+
+<nav class="rail mono" id="rail" aria-label="Chapters"></nav>
+
+<div class="hud mono" aria-hidden="true">
+  <div class="hud-top"><span>Spectrum</span><b id="hudSrc">Synth</b></div>
+  <div class="bars" id="bars"></div>
+  <div class="hud-axis"><span>20</span><span>200</span><span>2k</span><span>20k Hz</span></div>
+</div>
+
+<main>
+  <section class="ch hero" id="hero" data-ch="hero" data-name="Plate" style="--h:230vh">
+    <div class="pin">
+      <div class="hero-top fade mono"><span>Sculptural speaker · Edition 01</span><span class="hide-s">Plate 01 → 02 · bead-blasted aluminium</span></div>
+      <div class="hero-title fade">
+        <h1 class="display">CYMA One</h1>
+        <p class="display grad">See the bass.</p>
+      </div>
+      <div class="hero-bottom fade">
+        <p class="lede">A wide, low, bead-blasted aluminium speaker with its woofer facing the sky. Fifteen dollops of pure paint sit on the cone. Then the bass drops.</p>
+        <p class="mono cue"><i></i>Scroll — the drop is coming</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="drop" data-ch="drop" data-name="The Drop" style="--h:440vh">
+    <div class="pin">
+      <div class="head fade">
+        <p class="tag mono"><b>01</b><i></i>The Drop</p>
+        <h2>Silence.<br>Then <span class="grad">32&nbsp;Hz.</span></h2>
+        <p>One 808 note moves the cone fourteen millimetres. The paint sitting on it has nowhere to go but up.</p>
+        <p class="film mono">Film <b>Drop</b> · plate 02 → 03 · TC <b data-tc>00:00:00</b></p>
+      </div>
+      <div class="reads fade">
+        <div class="read">
+          <p class="lbl mono">Frequency <span class="faint" id="dropState">Silence</span></p>
+          <p class="big"><span id="dropHz">00</span><small>Hz</small></p>
+          <div class="meter" id="dropMeter"></div>
+          <p class="sub mono faint xs">Cone excursion <b id="dropExc">+0.0 mm</b></p>
+        </div>
+        <div class="read r">
+          <p class="lbl mono">Colours in the air</p>
+          <p class="big"><span id="airN">0</span><small>/ 8</small></p>
+          <div class="dots" id="airDots"></div>
+          <p class="sub mono faint xs" id="airName">Waiting for the drop</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="frozen" data-ch="frozen" data-name="Frozen" style="--h:420vh">
+    <div class="pin">
+      <div class="head fade">
+        <p class="tag mono"><b>02</b><i></i>Frozen</p>
+        <h2>Time stops<br>at the <span class="grad">peak.</span></h2>
+        <p>One high-speed frame, held forever. Orbit the suspended paint, then repaint every film with a tap.</p>
+        <p class="film mono">Film <b>Frozen</b> · plate 03 ↻ 03 · TC <b data-tc>00:00:00</b></p>
+      </div>
+      <div class="reads fade">
+        <div class="read">
+          <p class="lbl mono">Orbit</p>
+          <div class="orbit">
+            <svg class="dial" viewBox="0 0 64 64" aria-hidden="true"><circle class="trk" cx="32" cy="32" r="27"/><circle class="arc" id="orbitArc" cx="32" cy="32" r="27"/><circle class="dot" id="orbitDot" cx="59" cy="32" r="3"/></svg>
+            <p class="big"><span id="orbitDeg">000</span><small>°</small></p>
+          </div>
+          <p class="sub mono faint xs">Shutter 1/10,000 s · seamless 360° loop</p>
+        </div>
+        <div class="read r pe">
+          <p class="lbl mono">Palette <span class="faint" id="palName">Original</span></p>
+          <div class="chips" id="chips"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="inside" data-ch="inside" data-name="Inside" style="--h:340vh">
+    <div class="pin">
+      <div class="head fade">
+        <p class="tag mono"><b>03</b><i></i>Inside</p>
+        <h2>Fly into<br>the <span class="grad">sound.</span></h2>
+        <p>From the fundamental to the edge of hearing. Nine octaves, one continuous flight up through the paint.</p>
+        <p class="film mono">Film <b>Inside</b> · from the peak onward · TC <b data-tc>00:00:00</b></p>
+      </div>
+      <div class="reads fade">
+        <div class="read">
+          <p class="lbl mono">Sweep</p>
+          <p class="big"><span id="sweepHz">32</span><small id="sweepU">Hz</small></p>
+          <div class="meter" id="sweepMeter"></div>
+          <p class="sub mono faint xs">Wavelength <b id="sweepLam">10.7 m</b></p>
+        </div>
+        <div class="read r">
+          <p class="lbl mono">Octave</p>
+          <p class="big"><span id="octN">0.0</span><small>/ 9.3</small></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ch" id="anatomy" data-ch="anatomy" data-name="Anatomy" style="--h:460vh">
+    <div class="pin">
+      <div class="head fade">
+        <p class="tag mono"><b>04</b><i></i>Anatomy</p>
+        <h2>Nine parts.<br>Every gap a <span class="grad">colour.</span></h2>
+        <p>It comes apart layer by layer, and a different pigment blasts out of every seam.</p>
+        <p class="film mono">Film <b>Anatomy</b> · plate 01 → 04 · TC <b data-tc>00:00:00</b></p>
+      </div>
+      <div class="reads fade">
+        <div class="read">
+          <p class="lbl mono">Parts</p>
+          <p class="big"><span id="partN">01</span><small>/ 09</small></p>
+          <p class="sub mono faint xs">Stack height <b id="stackH">1.0×</b></p>
+        </div>
+        <div class="read r">
+          <div class="glass card">
+            <div class="top mono"><span>Part <b id="cardIdx">—</b></span><span id="cardOf">Assembled</span></div>
+            <h4 id="cardName">CYMA One</h4>
+            <p class="spec" id="cardSpec">Nine machined parts. Zero visible fasteners.</p>
+            <div class="row mono"><span class="faint">Burst</span><span id="cardBurst">—</span></div>
+            <div class="row mono"><span class="faint">Ø 440 mm</span><span class="faint">14.8 kg</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="specs" id="specs" data-ch="specs" data-name="Specs">
+    <p class="tag mono"><b>05</b><i></i>Specs</p>
+    <h2 class="h2">Built to<br><span class="grad">move paint.</span></h2>
+    <div class="grid">
+      <div class="cell"><p class="n"><span data-count="32">0</span><small>Hz</small></p><p class="mono dim">Low extension, −3 dB</p></div>
+      <div class="cell"><p class="n"><span data-count="20">0</span><small>kHz</small></p><p class="mono dim">High extension</p></div>
+      <div class="cell"><p class="n"><span data-count="600">0</span><small>W</small></p><p class="mono dim">Bi-amped class D</p></div>
+      <div class="cell"><p class="n"><span data-count="112">0</span><small>dB</small></p><p class="mono dim">Max SPL at 1 m</p></div>
+      <div class="cell"><p class="n"><span data-count="310">0</span><small>mm</small></p><p class="mono dim">Woofer diameter</p></div>
+      <div class="cell"><p class="n"><span data-count="14.8" data-dec="1">0</span><small>kg</small></p><p class="mono dim">Machined mass</p></div>
+      <div class="cell"><p class="n"><span data-count="9">0</span><small>parts</small></p><p class="mono dim">No visible fasteners</p></div>
+      <div class="cell"><p class="n"><span data-count="8">0</span><small>colours</small></p><p class="mono dim">In the air at the peak</p></div>
+    </div>
+  </section>
+
+  <section class="buy" id="buy" data-ch="buy" data-name="Buy">
+    <div class="buy-inner">
+      <p class="tag mono"><b>06</b><i></i>Own one</p>
+      <h2 class="h2">CYMA<br><span class="grad">One.</span></h2>
+      <p class="lede">Edition of 500. Hand-finished and numbered on the plinth. Paint not included.</p>
+      <p class="mono dim" style="margin-top:34px">Finish — <b id="finName" style="color:var(--ink)">Carbon</b></p>
+      <div class="fin" id="fin">
+        <button class="act" data-f="Carbon" aria-label="Carbon finish"><span style="--sw:radial-gradient(circle at 32% 28%,#55555a,#0d0d0e 68%)"></span></button>
+        <button data-f="Titanium" aria-label="Titanium finish"><span style="--sw:radial-gradient(circle at 32% 28%,#f0f1f3,#74767b 68%)"></span></button>
+        <button data-f="Sand" aria-label="Sand finish"><span style="--sw:radial-gradient(circle at 32% 28%,#f1e3c6,#8c7752 68%)"></span></button>
+        <button data-f="Cobalt" aria-label="Cobalt finish"><span style="--sw:radial-gradient(circle at 32% 28%,#7d97ff,#13286c 68%)"></span></button>
+      </div>
+      <div class="price"><span class="big">$2,490</span><span class="mono dim">or 12 × $208</span></div>
+      <button class="cta" id="cta">Reserve yours <span aria-hidden="true">→</span></button>
+      <p class="mono faint xs" style="margin-top:16px">Ships spring 2027 · two-year warranty</p>
+    </div>
+  </section>
+
+  <footer class="foot mono"><span>CYMA One is a fictional product.</span><span>Three.js · Lenis · Web Audio</span></footer>
+</main>
+<div class="toast glass mono" id="toast" role="status"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ================================================================ utils */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const setText = (el, v) => { if (el._v !== v) { el._v = v; el.textContent = v; } };
+const SMALL = Math.min(innerWidth, innerHeight) < 700;
+const rng = (a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; })(808);
+
+/* ================================================================ paint + CSS filter maths */
+const PAINT = ['#ff1d8d', '#00c6ff', '#ffd200', '#ff6a00', '#8a2bff', '#7dff1f', '#1e46ff', '#e3122d'];
+const PAINT_NAMES = ['Magenta', 'Cyan', 'Yellow', 'Orange', 'Violet', 'Lime', 'Cobalt', 'Crimson'];
+const hex01 = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+const rgbCss = c => `rgb(${c.map(v => Math.round(clamp(v) * 255)).join(',')})`;
+
+const PALETTES = {
+  Original: [],
+  Neon: [['saturate', 2.1], ['contrast', 1.18], ['brightness', 1.1]],
+  Sunset: [['sepia', .9], ['saturate', 3.2], ['hue-rotate', -25], ['contrast', 1.1]],
+  Ocean: [['sepia', 1], ['hue-rotate', 180], ['saturate', 3.5], ['contrast', 1.1], ['brightness', 1.05]],
+  Mono: [['grayscale', 1], ['contrast', 1.3]],
+};
+const opsToCSS = ops => ops.length ? ops.map(([f, a]) => f === 'hue-rotate' ? `hue-rotate(${a}deg)` : `${f}(${a})`).join(' ') : 'none';
+// Same matrices the browser uses for the CSS filter functions (Filter Effects spec), so sampled UI colour == on-screen paint.
+function filterMatrix(f, a) {
+  if (f === 'saturate') return [.213 + .787 * a, .715 - .715 * a, .072 - .072 * a, .213 - .213 * a, .715 + .285 * a, .072 - .072 * a, .213 - .213 * a, .715 - .715 * a, .072 + .928 * a];
+  if (f === 'hue-rotate') {
+    const t = a * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+    return [.213 + c * .787 - s * .213, .715 - c * .715 - s * .715, .072 - c * .072 + s * .928,
+            .213 - c * .213 + s * .143, .715 + c * .285 + s * .140, .072 - c * .072 - s * .283,
+            .213 - c * .213 - s * .787, .715 - c * .715 + s * .715, .072 + c * .928 + s * .072];
+  }
+  const k = 1 - clamp(a);
+  if (f === 'grayscale') return [.2126 + .7874 * k, .7152 - .7152 * k, .0722 - .0722 * k, .2126 - .2126 * k, .7152 + .2848 * k, .0722 - .0722 * k, .2126 - .2126 * k, .7152 - .7152 * k, .0722 + .9278 * k];
+  if (f === 'sepia') return [.393 + .607 * k, .769 - .769 * k, .189 - .189 * k, .349 - .349 * k, .686 + .314 * k, .168 - .168 * k, .272 - .272 * k, .534 - .534 * k, .131 + .869 * k];
+  return null;
+}
+function applyOps(c, ops) {
+  let [r, g, b] = c;
+  for (const [f, a] of ops) {
+    if (f === 'contrast') { r = (r - .5) * a + .5; g = (g - .5) * a + .5; b = (b - .5) * a + .5; }
+    else if (f === 'brightness') { r *= a; g *= a; b *= a; }
+    else { const m = filterMatrix(f, a); [r, g, b] = [m[0] * r + m[1] * g + m[2] * b, m[3] * r + m[4] * g + m[5] * b, m[6] * r + m[7] * g + m[8] * b]; }
+    r = clamp(r); g = clamp(g); b = clamp(b);
+  }
+  return [r, g, b];
+}
+
+/* ================================================================ renderer */
+const canvas = $('#gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, SMALL ? 1.5 : 1.75));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, .03, 200);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, .12));
+const rimL = new THREE.DirectionalLight(0xffffff, 5.5); rimL.position.set(-7, 3.5, -6);
+const rimR = new THREE.DirectionalLight(0xe2ebff, 5.5); rimR.position.set(7, 3.5, -6);
+const topL = new THREE.DirectionalLight(0xffffff, 1.7); topL.position.set(0, 12, 3);
+const keyL = new THREE.DirectionalLight(0xfff3e6, .55); keyL.position.set(4, 3, 9);
+scene.add(rimL, rimR, topL, keyL);
+
+/* ================================================================ speaker (plate 1) */
+const FINISHES = { Carbon: '#18181a', Titanium: '#8f9196', Sand: '#bca784', Cobalt: '#22409c' };
+const finishTarget = new THREE.Color(FINISHES.Carbon);
+const shellMat = new THREE.MeshPhysicalMaterial({ color: FINISHES.Carbon, metalness: .85, roughness: .5, envMapIntensity: .5, clearcoat: .1, clearcoatRoughness: .5, side: THREE.DoubleSide });
+const bandMat = new THREE.MeshPhysicalMaterial({ color: '#0b0b0c', metalness: .95, roughness: .24, envMapIntensity: .85, side: THREE.DoubleSide });
+const motorMat = new THREE.MeshPhysicalMaterial({ color: '#a7acb1', metalness: 1, roughness: .2, envMapIntensity: 1.1, side: THREE.DoubleSide });
+const coilMat = new THREE.MeshPhysicalMaterial({ color: '#c97b3b', metalness: 1, roughness: .28, envMapIntensity: 1.1, side: THREE.DoubleSide });
+const basketMat = new THREE.MeshPhysicalMaterial({ color: '#2c2d31', metalness: .8, roughness: .42, envMapIntensity: .7, side: THREE.DoubleSide });
+const coneMat = new THREE.MeshPhysicalMaterial({ color: '#0e0e0e', metalness: 0, roughness: .78, envMapIntensity: .3, sheen: .25, sheenColor: new THREE.Color('#3a3a3a'), side: THREE.DoubleSide });
+const capMat = new THREE.MeshPhysicalMaterial({ color: '#1b1b1c', metalness: .3, roughness: .3, clearcoat: .9, envMapIntensity: .7, side: THREE.DoubleSide });
+
+const lathe = pts => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), 180);
+const CONE_IN = .32, CONE_OUT = 1.55, CONE_D = .27, CONE_Y = .66;
+const coneProf = r => CONE_D * Math.pow(clamp((r - CONE_IN) / (CONE_OUT - CONE_IN)), 1.4);
+const conePts = [];
+for (let i = 0; i <= 48; i++) { const r = lerp(CONE_OUT, CONE_IN, i / 48); conePts.push([r, coneProf(r) - .02]); }
+for (let i = 0; i <= 48; i++) { const r = lerp(CONE_IN, CONE_OUT, i / 48); conePts.push([r, coneProf(r)]); }
+const capPts = [];
+for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI / 2; capPts.push([Math.max(.001, .34 * Math.sin(a)), .12 * Math.cos(a)]); }
+const topPts = [[1.6, 0], [2.27, 0], [2.27, .25], [2.22, .33], [2.08, .37], [1.76, .37]];
+for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI; topPts.push([1.65 + .09 * Math.cos(a), .33 + .07 * Math.sin(a)]); }
+topPts.push([1.56, .27], [1.6, 0]);
+
+const PARTS = [
+  { name: 'Plinth', spec: 'Bead-blasted 6061 aluminium, 4 mm. Numbered by hand.', mat: shellMat, y: 0, h: .08, pts: [[.001, 0], [1.74, 0], [1.81, .02], [1.83, .08], [.001, .08]] },
+  { name: 'Lower shell', spec: 'Machined from a single billet. 2.1 kg of aluminium.', mat: shellMat, y: .08, h: .42, pts: [[.001, 0], [1.84, 0], [2.1, .07], [2.22, .19], [2.27, .34], [2.27, .42], [2.14, .42], [2.12, .3], [1.98, .17], [1.8, .11], [.001, .11]] },
+  { name: 'Neodymium motor', spec: 'N52 magnet. 1.4 tesla in the gap.', mat: motorMat, y: .2, h: .26, pts: [[.001, 0], [.74, 0], [.78, .03], [.78, .23], [.74, .26], [.3, .26], [.3, .2], [.001, .2]] },
+  { name: 'Cast basket', spec: 'Magnesium, six spokes, open back for air.', mat: basketMat, y: .38, h: .48, pts: [[.44, 0], [.54, 0], [1.62, .42], [1.72, .43], [1.72, .48], [1.58, .48], [.44, .07], [.44, 0]] },
+  { name: 'Voice coil', spec: 'Ø 75 mm copper-clad aluminium, four layers.', mat: coilMat, y: .36, h: .3, pts: [[.35, 0], [.4, 0], [.4, .3], [.35, .3], [.35, 0]] },
+  { name: 'Port band', spec: 'Anodised ring hiding a 360° slot port.', mat: bandMat, y: .5, h: .1, pts: [[1.98, 0], [2.27, 0], [2.27, .1], [1.98, .1], [1.98, 0]] },
+  { name: 'Top shell', spec: 'Machined top with a butyl rubber surround.', mat: shellMat, y: .6, h: .4, pts: topPts },
+  { name: 'Woofer cone', spec: 'Ø 310 mm carbon-paper composite. 14 mm of travel.', mat: coneMat, y: CONE_Y, h: CONE_D, pts: conePts },
+  { name: 'Dust cap', spec: 'Pressed carbon dome over a phase plug.', mat: capMat, y: CONE_Y, h: .12, pts: capPts },
+];
+const speaker = new THREE.Group();
+scene.add(speaker);
+const parts = PARTS.map(p => { const m = new THREE.Mesh(lathe(p.pts), p.mat); m.position.y = p.y; speaker.add(m); return m; });
+// basket spokes, so the parts read when the stack turns
+for (let k = 0; k < 6; k++) {
+  const pivot = new THREE.Group(); pivot.rotation.y = k / 6 * Math.PI * 2;
+  const spoke = new THREE.Mesh(new THREE.BoxGeometry(1.16, .045, .09), basketMat);
+  spoke.position.set(1.08, .23, 0); spoke.rotation.z = Math.atan2(.42, 1.08);
+  pivot.add(spoke); parts[3].add(pivot);
+}
+// status LED on the top shell
+const ledMat = new THREE.MeshBasicMaterial({ color: '#ff1d8d', toneMapped: false });
+const led = new THREE.Mesh(new THREE.SphereGeometry(.028, 16, 12), ledMat);
+led.position.set(0, .365, 2.13); parts[6].add(led);
+
+function surfY(r) {
+  if (r < .34) return CONE_Y + .12 * Math.sqrt(Math.max(0, 1 - (r / .34) ** 2));
+  if (r <= CONE_OUT) return CONE_Y + coneProf(r);
+  if (r <= 2.27) return .96;
+  return 0;
+}
+
+/* ================================================================ paint (plates 2 + 3) */
+const DELAY_C = PAINT.map((_, c) => c * .024);
+const DOL = [];
+for (let i = 0; i < 15; i++) {
+  const a = i * 2.39996 + rng() * .3, r = .5 + .92 * Math.sqrt((i + .5) / 15);
+  const c = (i * 3) % 8;
+  DOL.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, r, c, s: .82 + rng() * .45, y: surfY(r), delay: DELAY_C[c] + rng() * .008 });
+}
+const TEND = SMALL ? 3 : 5, TIP_N = SMALL ? 5 : 7, CROWN = SMALL ? 14 : 22, MIST = SMALL ? 55 : 110, BREAK = .84;
+const TUBES = [];
+const pD = [], pV = [], pP = [], pA = [], pH = [], pS = [];
+function addP(d, vx, vy, vz, size, px = 0, py = 0, pz = 0, amp = 0, ph = 0) { pD.push(d); pV.push(vx, vy, vz); pP.push(px, py, pz); pA.push(amp); pH.push(ph); pS.push(size); }
+const tendV = (tb, s) => lerp(tb.vmin, tb.vmax, Math.pow(s, .85));
+DOL.forEach((d, di) => {
+  const out = new THREE.Vector3(d.x, 0, d.z).normalize();
+  for (let k = 0; k < TEND; k++) {
+    const th = rng() * Math.PI * 2, sp = .06 + rng() * .26;
+    const dir = new THREE.Vector3(Math.cos(th) * sp + out.x * .13, 1, Math.sin(th) * sp + out.z * .13).normalize();
+    const perp = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(rng() - .5, 0, rng() - .5).normalize()).normalize();
+    // a liquid ligament: continuous tube up to BREAK, then it pinches off into droplets
+    const tb = { d: di, dx: dir.x, dy: dir.y, dz: dir.z, vmin: 3 + rng() * 1.5, vmax: 9.5 + rng() * 6, px: perp.x, py: perp.y, pz: perp.z,
+      amp: .16 + rng() * .45, ph: rng() * 6.283, fq: 3 + rng() * 6, R: (.06 + rng() * .05) * d.s };
+    TUBES.push(tb);
+    for (let j = 0; j < TIP_N; j++) {
+      const f = j / (TIP_N - 1), s = lerp(BREAK + .025, 1, f), v = tendV(tb, s);
+      addP(di, dir.x * v, dir.y * v, dir.z * v, (.04 + .045 * f * f) * d.s * (j === TIP_N - 1 ? 1.35 : 1), perp.x, perp.y, perp.z, tb.amp, tb.ph + s * tb.fq);
+    }
+  }
+  for (let k = 0; k < CROWN; k++) {
+    const a = k / CROWN * Math.PI * 2 + rng() * .15, h = 2 + rng() * 1.2;
+    addP(di, Math.cos(a) * h, 2.4 + rng() * 2.4, Math.sin(a) * h, (.035 + rng() * .03) * d.s);
+  }
+  for (let k = 0; k < MIST; k++) {
+    const th = rng() * Math.PI * 2, ph = Math.pow(rng(), .75) * .75, v = 3 + rng() * 13;
+    addP(di, Math.sin(ph) * Math.cos(th) * v, Math.cos(ph) * v, Math.sin(ph) * Math.sin(th) * v, .012 + rng() * .034);
+  }
+});
+const NP = pD.length;
+const PD = Int16Array.from(pD), PV = Float32Array.from(pV), PP = Float32Array.from(pP), PA = Float32Array.from(pA), PH = Float32Array.from(pH), PS = Float32Array.from(pS);
+
+const paintMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .22, metalness: 0, clearcoat: .55, clearcoatRoughness: .12, envMapIntensity: .5 });
+const dropGeo = new THREE.IcosahedronGeometry(1, SMALL ? 1 : 2);
+const paint = new THREE.InstancedMesh(dropGeo, paintMat, NP);
+paint.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+paint.frustumCulled = false;
+const tmpC = new THREE.Color();
+for (let i = 0; i < NP; i++) paint.setColorAt(i, tmpC.set(PAINT[DOL[PD[i]].c]).offsetHSL(0, 0, (rng() - .5) * .08));
+speaker.add(paint);
+
+const dollops = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 32, 20), paintMat, DOL.length);
+dollops.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+dollops.frustumCulled = false;
+DOL.forEach((d, i) => dollops.setColorAt(i, tmpC.set(PAINT[d.c])));
+speaker.add(dollops);
+
+/* liquid ligaments: one dynamic tube mesh for every tendril */
+const TUBE_SEG = SMALL ? 26 : 40, TUBE_RAD = SMALL ? 7 : 10, NT = TUBES.length, RV = TUBE_SEG * TUBE_RAD;
+const tubePos = new Float32Array(NT * RV * 3), tubeNor = new Float32Array(NT * RV * 3), tubeCol = new Float32Array(NT * RV * 3);
+const tubeIdx = [];
+for (let t = 0; t < NT; t++) {
+  const base = t * RV;
+  tmpC.set(PAINT[DOL[TUBES[t].d].c]);
+  for (let k = 0; k < RV; k++) { tubeCol[(base + k) * 3] = tmpC.r; tubeCol[(base + k) * 3 + 1] = tmpC.g; tubeCol[(base + k) * 3 + 2] = tmpC.b; }
+  for (let j = 0; j < TUBE_SEG - 1; j++) for (let r = 0; r < TUBE_RAD; r++) {
+    const a = base + j * TUBE_RAD + r, b = base + j * TUBE_RAD + (r + 1) % TUBE_RAD;
+    tubeIdx.push(a, a + TUBE_RAD, b, b, a + TUBE_RAD, b + TUBE_RAD);
+  }
+}
+const tubeGeo = new THREE.BufferGeometry();
+tubeGeo.setAttribute('position', new THREE.BufferAttribute(tubePos, 3).setUsage(THREE.DynamicDrawUsage));
+tubeGeo.setAttribute('normal', new THREE.BufferAttribute(tubeNor, 3).setUsage(THREE.DynamicDrawUsage));
+tubeGeo.setAttribute('color', new THREE.BufferAttribute(tubeCol, 3));
+tubeGeo.setIndex(tubeIdx);
+const tubeMat = paintMat.clone(); tubeMat.vertexColors = true; tubeMat.side = THREE.DoubleSide;
+const tubes = new THREE.Mesh(tubeGeo, tubeMat);
+tubes.frustumCulled = false;
+speaker.add(tubes);
+const RCOS = Array.from({ length: TUBE_RAD }, (_, k) => Math.cos(k / TUBE_RAD * Math.PI * 2)), RSIN = RCOS.map((_, k) => Math.sin(k / TUBE_RAD * Math.PI * 2));
+
+/* ================================================================ gap bursts (plate 4) */
+const NBP = SMALL ? 90 : 190;
+const BA = new Float32Array(8 * NBP), BSP = new Float32Array(8 * NBP), BVY = new Float32Array(8 * NBP), BSZ = new Float32Array(8 * NBP);
+const bursts = new THREE.InstancedMesh(dropGeo, paintMat, 8 * NBP);
+bursts.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+bursts.frustumCulled = false;
+for (let g = 0, i = 0; g < 8; g++) for (let k = 0; k < NBP; k++, i++) {
+  BA[i] = rng() * Math.PI * 2; BSP[i] = 1.2 + Math.pow(rng(), 1.5) * 4.2; BVY[i] = (rng() - .5) * .9; BSZ[i] = .02 + rng() * .05;
+  bursts.setColorAt(i, tmpC.set(PAINT[g]).offsetHSL(0, 0, (rng() - .5) * .08));
+}
+speaker.add(bursts);
+
+/* ================================================================ per-frame instance updates */
+const G = -9.8, TPEAK = .72, GAP = .85, HIT = .14;
+const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), POS = new THREE.Vector3(), SCL = new THREE.Vector3(), VEL = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+const dropT = p => p < HIT ? -1 : (p - HIT) / (1 - HIT) * TPEAK;
+const punchAt = T => T < 0 ? 0 : .17 * Math.sin(clamp(T / .035) * Math.PI / 2) * Math.exp(-Math.max(0, T - .035) * 4.5);
+
+function updatePaint(T, vis) {
+  for (let i = 0; i < NP; i++) {
+    const d = DOL[PD[i]], t = T - d.delay;
+    if (t <= 0 || vis <= .001) { paint.setMatrixAt(i, ZERO); continue; }
+    const o = i * 3, vx = PV[o], vy = PV[o + 1], vz = PV[o + 2];
+    const w = PA[i] * Math.sin(PH[i] + t * 3) * Math.min(t * 2.2, 1);
+    const x = d.x + vx * t + PP[o] * w, z = d.z + vz * t + PP[o + 2] * w;
+    let y = d.y + .05 + vy * t + .5 * G * t * t + PP[o + 1] * w;
+    const sz = PS[i] * Math.min(t / .035, 1) * vis;
+    const floor = surfY(Math.hypot(x, z));
+    if (y < floor) { // landed: flatten into a splat
+      POS.set(x, floor + sz * .3, z); Q.identity(); SCL.set(sz * 1.5, sz * .4, sz * 1.5);
+    } else {
+      VEL.set(vx, vy + G * t, vz); const sp = VEL.length() || 1; VEL.divideScalar(sp);
+      Q.setFromUnitVectors(UP, VEL); POS.set(x, y, z); SCL.set(sz, sz * (1 + Math.min(sp * .06, 1.6)), sz);
+    }
+    M.compose(POS, Q, SCL); paint.setMatrixAt(i, M);
+  }
+  paint.instanceMatrix.needsUpdate = true;
+}
+function updateDollops(T, appear, punch) {
+  for (let i = 0; i < DOL.length; i++) {
+    const d = DOL[i];
+    const ap = appear >= 1 ? 1 : smooth(.18 + i * .036, .3 + i * .036, appear);
+    const launched = T < 0 ? 0 : clamp((T - d.delay) / .1);
+    const s = ap * (1 - .78 * launched) * d.s;
+    if (s <= .0001) { dollops.setMatrixAt(i, ZERO); continue; }
+    POS.set(d.x, d.y + punch + .04 * s + (1 - ap) * 1.2, d.z); Q.identity();
+    SCL.set(.17 * s, .095 * s * (1 + (1 - ap) * 1.4) * (1 + launched * 1.6), .17 * s);
+    M.compose(POS, Q, SCL); dollops.setMatrixAt(i, M);
+  }
+  dollops.instanceMatrix.needsUpdate = true;
+}
+const partOff = new Float32Array(9);
+function updateBursts(btime, vis) {
+  for (let g = 1, i = 0; g <= 8; g++) {
+    const tb = btime[g], lo = PARTS[g - 1], hi = PARTS[g];
+    const yc = ((lo.y + partOff[g - 1] + lo.h) + (hi.y + partOff[g])) / 2;
+    const e = Math.exp(-2.4 * tb), kk = (1 - e) / 2.4;
+    for (let k = 0; k < NBP; k++, i++) {
+      if (tb <= 0 || vis <= .001) { bursts.setMatrixAt(i, ZERO); continue; }
+      const a = BA[i], sp = BSP[i], r = .6 + sp * kk * 1.35;
+      POS.set(Math.cos(a) * r, yc + BVY[i] * kk * 1.4 - .08 * tb * tb, Math.sin(a) * r);
+      VEL.set(Math.cos(a) * sp * e, BVY[i] * e, Math.sin(a) * sp * e);
+      const vl = VEL.length();
+      if (vl > 1e-4) Q.setFromUnitVectors(UP, VEL.divideScalar(vl)); else Q.identity();
+      const sz = BSZ[i] * Math.min(tb / .04, 1) * vis;
+      SCL.set(sz, sz * (1 + Math.min(vl * .5, 2.2)), sz);
+      M.compose(POS, Q, SCL); bursts.setMatrixAt(i, M);
+    }
+  }
+  bursts.instanceMatrix.needsUpdate = true;
+}
+
+const CP = new Float32Array(TUBE_SEG * 3), CR = new Float32Array(TUBE_SEG);
+function updateTubes(T, vis) {
+  for (let ti = 0; ti < NT; ti++) {
+    const tb = TUBES[ti], d = DOL[tb.d], t = T - d.delay, base = ti * RV * 3;
+    if (t <= 0 || vis <= .001) { for (let k = 0; k < RV; k++) { tubePos[base + k * 3] = d.x; tubePos[base + k * 3 + 1] = d.y; tubePos[base + k * 3 + 2] = d.z; } continue; }
+    const thick = lerp(1.7, 1, smooth(0, .3, t)) * vis, grow = Math.min(t * 2.2, 1);
+    for (let j = 0; j < TUBE_SEG; j++) {
+      const u = j / (TUBE_SEG - 1), s = u * BREAK, v = tendV(tb, s);
+      const w = tb.amp * Math.sin(tb.ph + s * tb.fq + t * 3) * grow;
+      const x = d.x + tb.dx * v * t + tb.px * w, z = d.z + tb.dz * v * t + tb.pz * w;
+      let y = d.y + .05 + tb.dy * v * t + .5 * G * t * t + tb.py * w;
+      const fl = surfY(Math.hypot(x, z)) + .02; if (y < fl) y = fl;
+      CP[j * 3] = x; CP[j * 3 + 1] = y; CP[j * 3 + 2] = z;
+      CR[j] = tb.R * thick * (.5 + .5 * Math.sin(Math.PI * Math.min(u * 1.15, 1))) * (1 + .2 * Math.sin(u * 26 + tb.ph)) * (1 - smooth(.86, 1, u));
+    }
+    let nx = 0, ny = 0, nz = 0;
+    for (let j = 0; j < TUBE_SEG; j++) {
+      const j0 = Math.max(0, j - 1) * 3, j1 = Math.min(TUBE_SEG - 1, j + 1) * 3;
+      let tx = CP[j1] - CP[j0], ty = CP[j1 + 1] - CP[j0 + 1], tz = CP[j1 + 2] - CP[j0 + 2];
+      const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
+      if (j === 0) { let rx = 1, rz = 0; if (Math.abs(tx) > .9) { rx = 0; rz = 1; } const dp = rx * tx + rz * tz; nx = rx - dp * tx; ny = -dp * ty; nz = rz - dp * tz; }
+      else { const dp = nx * tx + ny * ty + nz * tz; nx -= dp * tx; ny -= dp * ty; nz -= dp * tz; } // parallel transport
+      const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      const bx = ty * nz - tz * ny, by = tz * nx - tx * nz, bz = tx * ny - ty * nx;
+      const r = CR[j], cx = CP[j * 3], cy = CP[j * 3 + 1], cz = CP[j * 3 + 2];
+      for (let k = 0; k < TUBE_RAD; k++) {
+        const ox = RCOS[k] * nx + RSIN[k] * bx, oy = RCOS[k] * ny + RSIN[k] * by, oz = RCOS[k] * nz + RSIN[k] * bz, o = base + (j * TUBE_RAD + k) * 3;
+        tubePos[o] = cx + ox * r; tubePos[o + 1] = cy + oy * r; tubePos[o + 2] = cz + oz * r;
+        tubeNor[o] = ox; tubeNor[o + 1] = oy; tubeNor[o + 2] = oz;
+      }
+    }
+  }
+  tubeGeo.attributes.position.needsUpdate = true; tubeGeo.attributes.normal.needsUpdate = true;
+}
+
+/* ================================================================ chapter → film state */
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const insideCurve = new THREE.CatmullRomCurve3([V3(0, 5.6, 19), V3(5, 6.1, 10), V3(1.9, 7.1, 3.7), V3(.35, 8.8, 1.1), V3(0, 10.8, .25)]);
+const S = { id: 'hero', T: -1, paint: false, appear: 0, burst: false, gaps: new Float32Array(9), btime: new Float32Array(9), cam: V3(0, 0, 0), tgt: V3(0, 0, 0), rot: 0, veil: 0, tremble: 0, damp: 7 };
+let elapsed = 0;
+
+function gapsFor(p, gaps, btime) {
+  for (let k = 1; k <= 8; k++) { const s0 = .1 + (8 - k) * .062; gaps[k] = smooth(s0, s0 + .3, p); if (btime) btime[k] = clamp((p - s0 - .02) * 2.6, 0, 2); }
+}
+function stackTop(gaps) {
+  let off = 0, top = 0;
+  for (let i = 0; i < 9; i++) { if (i) off += gaps[i] * GAP; top = Math.max(top, PARTS[i].y + PARTS[i].h + off); }
+  return top;
+}
+function computeState(id, p) {
+  S.id = id; S.T = -1; S.paint = false; S.appear = 0; S.burst = false; S.gaps.fill(0); S.btime.fill(0);
+  S.rot = 0; S.veil = 0; S.tremble = 0; S.damp = 7;
+  if (id === 'hero') {
+    S.appear = p;
+    S.cam.set(0, lerp(4.7, 4.4, p), lerp(8.8, 8.2, p)); S.tgt.set(0, 1.4, 0);
+  } else if (id === 'drop') {
+    S.paint = true; S.appear = 1; S.tremble = smooth(.03, HIT, p); S.T = dropT(p);
+    const u = smooth(HIT - .04, 1, p);
+    S.cam.set(0, lerp(4.4, 5.6, u), lerp(8.2, 19, u)); S.tgt.set(0, lerp(1.4, 5, u), 0);
+  } else if (id === 'frozen') {
+    S.paint = true; S.appear = 1; S.T = TPEAK;
+    const a = p * Math.PI * 2, R = 19 - Math.sin(p * Math.PI) * 2.5;
+    S.cam.set(Math.sin(a) * R, 5.6 + Math.sin(p * Math.PI) * 1.6, Math.cos(a) * R); S.tgt.set(0, 5, 0);
+  } else if (id === 'inside') {
+    S.paint = true; S.appear = 1; S.T = TPEAK + p * .05;
+    const u = smooth(0, 1, p);
+    insideCurve.getPoint(u, S.cam);
+    S.tgt.set(0, u < .5 ? lerp(5, 7.4, u / .5) : lerp(7.4, 13.5, (u - .5) / .5), 0);
+    S.veil = smooth(.9, 1, p); S.damp = 9;
+  } else if (id === 'anatomy') {
+    S.burst = true; S.veil = 1 - smooth(0, .07, p);
+    gapsFor(p, S.gaps, S.btime);
+    const top = stackTop(S.gaps);
+    S.rot = p * 1.1 - .3;
+    S.cam.set(0, 2.4 + top * .5, 7.8 + top * 1.15); S.tgt.set(0, .3 + top * .47, 0); S.damp = 10;
+  } else {
+    S.rot = elapsed * .16;
+    const shift = id === 'buy' && innerWidth > 900 ? -2 : 0;
+    S.cam.set(shift * .4, 3.2, 8.8); S.tgt.set(shift, .85, 0); S.damp = 3;
+  }
+}
+
+const camPos = V3(0, 4.7, 8.8), camTgt = V3(0, 1.4, 0), tmpV = V3(0, 0, 0), shake = V3(0, 0, 0);
+const gapsD = new Float32Array(9);
+let paintVis = 0, burstVis = 0, punch = 0;
+const veil = $('#veil');
+function applyScene(dt) {
+  const snap = S.veil > .97, k = 1 - Math.exp(-dt * S.damp);
+  const ff = clamp(1.25 / camera.aspect, 1, 2.6); // portrait screens: pull back so the speaker fits
+  tmpV.copy(S.cam).sub(S.tgt).multiplyScalar(ff).add(S.tgt);
+  if (snap) { camPos.copy(tmpV); camTgt.copy(S.tgt); } else { camPos.lerp(tmpV, k); camTgt.lerp(S.tgt, k); }
+  shake.set(0, 0, 0);
+  if (S.T >= 0 && S.T < .25 && S.id === 'drop') { const a = .07 * Math.exp(-S.T * 14); shake.set(Math.sin(S.T * 170) * a, Math.sin(S.T * 230 + 1) * a, 0); }
+  camera.position.copy(camPos).add(shake); camera.lookAt(camTgt);
+  veil.style.opacity = S.veil.toFixed(3);
+
+  // rotation, shortest path
+  let dr = ((S.rot - speaker.rotation.y) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+  speaker.rotation.y += snap ? dr : dr * (1 - Math.exp(-dt * (S.id === 'anatomy' ? 8 : 2.5)));
+
+  // explode / reassemble
+  const kg = snap ? 1 : 1 - Math.exp(-dt * (S.burst ? 12 : 3.5));
+  let off = 0;
+  for (let i = 0; i < 9; i++) { gapsD[i] = lerp(gapsD[i], S.gaps[i], kg); if (i) off += gapsD[i] * GAP; partOff[i] = off; }
+  punch = S.T >= 0 ? punchAt(S.T) : S.tremble * .008 * Math.sin(elapsed * 95);
+  for (let i = 0; i < 9; i++) parts[i].position.y = PARTS[i].y + partOff[i] + (i >= 7 ? punch : 0);
+
+  // finishes
+  shellMat.color.lerp(finishTarget, 1 - Math.exp(-dt * 5));
+
+  const kv = 1 - Math.exp(-dt * 6);
+  paintVis = snap ? +S.paint : lerp(paintVis, +S.paint, kv);
+  burstVis = snap ? +S.burst : lerp(burstVis, +S.burst, kv);
+  paint.visible = paintVis > .001 && S.T > 0;
+  if (paint.visible) updatePaint(S.T, paintVis);
+  tubes.visible = paint.visible;
+  if (tubes.visible) updateTubes(S.T, paintVis);
+  dollops.visible = S.appear > 0 && S.id !== 'anatomy';
+  if (dollops.visible) updateDollops(S.T, S.appear, punch);
+  bursts.visible = burstVis > .001;
+  if (bursts.visible) updateBursts(S.btime, burstVis);
+  ledMat.color.setRGB(1, .11, .55).multiplyScalar(.6 + .4 * Math.sin(elapsed * 2.4) ** 2 + bassLevel * 2);
+}
+
+/* ================================================================ live colour sampler */
+const sc = document.createElement('canvas'); sc.width = 96; sc.height = 54;
+const sctx = sc.getContext('2d', { willReadFrequently: true });
+let palOps = [];
+let lastSample = null;
+const acc = [hex01(PAINT[0]), hex01(PAINT[1]), hex01(PAINT[2])];
+let accT = acc.map(c => c.slice());
+function sampleAccent() {
+  sctx.drawImage(renderer.domElement, 0, 0, 96, 54);
+  const d = sctx.getImageData(0, 0, 96, 54).data;
+  const bins = Array.from({ length: 12 }, () => ({ w: 0, r: 0, g: 0, b: 0, i: 0 }));
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx < .22) continue;
+    const s = (mx - mn) / mx;
+    if (s < .45) continue;
+    let h = mx === r ? (g - b) / (mx - mn) : mx === g ? 2 + (b - r) / (mx - mn) : 4 + (r - g) / (mx - mn);
+    h = ((h / 6) % 1 + 1) % 1;
+    const bi = Math.floor(h * 12) % 12, w = s * s * mx, B = bins[bi];
+    B.w += w; B.r += r * w; B.g += g * w; B.b += b * w; B.i = bi; n++;
+  }
+  lastSample = { n, bins: bins.filter(b => b.w > 0).map(b => ({ hue: b.i * 30, w: +b.w.toFixed(2), c: rgbCss([b.r / b.w, b.g / b.w, b.b / b.w]) })) };
+  let trio;
+  if (n < 14) trio = [hex01(PAINT[0]), hex01(PAINT[1]), hex01(PAINT[2])];
+  else {
+    trio = bins.filter(b => b.w > 0).sort((a, b) => b.w - a.w).slice(0, 3).sort((a, b) => a.i - b.i)
+      .map(b => { const c = [b.r / b.w, b.g / b.w, b.b / b.w], m = Math.max(...c) || 1; return c.map(v => v / m * .97); });
+    while (trio.length < 3) trio.push(trio[trio.length - 1].slice());
+  }
+  accT = trio.map(c => applyOps(c, palOps));
+}
+const rootStyle = document.documentElement.style;
+function pushAccent(dt) {
+  const k = 1 - Math.exp(-dt * 3.5);
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) acc[i][j] = lerp(acc[i][j], accT[i][j], k);
+    rootStyle.setProperty(`--a${i + 1}`, rgbCss(acc[i]));
+  }
+}
+
+/* ================================================================ palettes */
+const chipsEl = $('#chips');
+Object.keys(PALETTES).forEach((name, i) => {
+  const b = document.createElement('button');
+  b.className = 'chip mono' + (i ? '' : ' act'); b.dataset.p = name;
+  const cols = [0, 3, 2, 5, 1, 6, 4, 7, 0].map(c => rgbCss(applyOps(hex01(PAINT[c]), PALETTES[name])));
+  b.innerHTML = `<s style="--sw:conic-gradient(${cols.join(',')})"></s>${name}`;
+  b.addEventListener('click', () => setPalette(name));
+  chipsEl.appendChild(b);
+});
+function setPalette(name) {
+  palOps = PALETTES[name];
+  const css = opsToCSS(palOps);
+  canvas.style.filter = css; rootStyle.setProperty('--pf', css);
+  $$('.chip', chipsEl).forEach(c => c.classList.toggle('act', c.dataset.p === name));
+  setText($('#palName'), name);
+  sampleAccent();
+}
+
+/* ================================================================ chapters + DOM */
+const CH = $$('[data-ch]').map(el => ({ el, id: el.dataset.ch, name: el.dataset.name, pin: $('.pin', el), tc: $('[data-tc]', el), top: 0, h: 1, p: 0, inV: -1 }));
+const CHM = Object.fromEntries(CH.map(c => [c.id, c]));
+const DROP_I = CH.findIndex(c => c.id === 'drop');
+function measure() { for (const c of CH) { c.top = c.el.offsetTop; c.h = c.el.offsetHeight; } }
+
+const rail = $('#rail');
+const railLinks = CH.map((c, i) => {
+  const a = document.createElement('a'); a.href = '#' + c.id; a.dataset.go = c.id;
+  a.innerHTML = `<span>${String(i).padStart(2, '0')} ${c.name}</span><b></b>`; rail.appendChild(a); return a;
+});
+function goTo(id) { const c = CHM[id]; if (!c) return; const y = c.top + (c.pin && id !== 'hero' ? 2 : 0); lenis ? lenis.scrollTo(y, { duration: 1.6 }) : scrollTo({ top: y, behavior: 'smooth' }); }
+document.addEventListener('click', e => { const a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); goTo(a.dataset.go); } });
+
+// log frequency meters
+const logPos = f => clamp(Math.log(f / 20) / Math.log(1000));
+function buildMeter(el) {
+  const ticks = [20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000];
+  el.innerHTML = `<div class="scale">${ticks.map(f => `<span class="tk${[20, 100, 1000, 10000, 20000].includes(f) ? ' d' : ''}" style="left:${(logPos(f) * 100).toFixed(2)}%"></span>`).join('')}<span class="fill"></span><span class="mk"></span></div>
+  <div class="tl mono"><span style="left:0">20</span><span style="left:${(logPos(100) * 100).toFixed(1)}%">100</span><span style="left:${(logPos(1000) * 100).toFixed(1)}%">1k</span><span style="left:${(logPos(10000) * 100).toFixed(1)}%">10k</span><span style="left:100%">20k</span></div>`;
+  return $('.scale', el);
+}
+const dropScale = buildMeter($('#dropMeter')), sweepScale = buildMeter($('#sweepMeter'));
+const airDots = $('#airDots');
+const dots = PAINT.map((c, i) => { const d = document.createElement('i'); d.style.setProperty('--c', c); d.title = PAINT_NAMES[i]; airDots.appendChild(d); return d; });
+
+const UI = Object.fromEntries(['navIdx', 'navName', 'navBar', 'dropHz', 'dropState', 'dropExc', 'airN', 'airName', 'orbitDeg', 'orbitArc', 'orbitDot', 'sweepHz', 'sweepU', 'sweepLam', 'octN', 'partN', 'stackH', 'cardIdx', 'cardOf', 'cardName', 'cardSpec', 'cardBurst', 'hudSrc'].map(id => [id, $('#' + id)]));
+const tc = p => { const s = p * 10; return `00:${String(Math.floor(s)).padStart(2, '0')}:${String(Math.floor((s % 1) * 24)).padStart(2, '0')}`; };
+const fmtHz = f => f < 1000 ? [String(Math.round(f)), 'Hz'] : [(f / 1000).toFixed(f < 10000 ? 2 : 1), 'kHz'];
+const uiGaps = new Float32Array(9);
+let lastCard = -2;
+
+function updateUI(A, ai) {
+  setText(UI.navIdx, String(ai).padStart(2, '0')); setText(UI.navName, A.name);
+  UI.navBar.style.setProperty('--np', A.p.toFixed(3));
+  railLinks.forEach((l, i) => { l.style.setProperty('--rp', (i < ai ? 1 : i === ai ? Math.max(A.p, .04) : 0).toFixed(3)); l.classList.toggle('act', i === ai); });
+  for (const c of CH) if (c.tc) setText(c.tc, tc(c.p));
+
+  // The Drop: frequency meter + colours in the air
+  const Td = dropT(CHM.drop.p), hit = Td >= 0;
+  setText(UI.dropHz, hit ? '32' : '00');
+  setText(UI.dropState, hit ? 'Bass hit · 808' : CHM.drop.p > .03 ? 'Pre-roll' : 'Silence');
+  dropScale.style.setProperty('--x', hit ? logPos(32).toFixed(4) : '0');
+  setText(UI.dropExc, `+${(punchAt(Td) * 82).toFixed(1)} mm`);
+  let air = 0; DELAY_C.forEach((dl, c) => { const on = Td > dl + .004; dots[c].classList.toggle('on', on); if (on) air++; });
+  setText(UI.airN, String(air));
+  setText(UI.airName, air === 0 ? 'Waiting for the drop' : air === 8 ? 'All eight airborne' : `${PAINT_NAMES[air - 1]} just left the cone`);
+
+  // Frozen: orbit readout
+  const deg = CHM.frozen.p * 360;
+  setText(UI.orbitDeg, String(Math.round(deg)).padStart(3, '0'));
+  UI.orbitArc.style.strokeDashoffset = (169.65 * (1 - CHM.frozen.p)).toFixed(2);
+  const ra = deg * Math.PI / 180; UI.orbitDot.setAttribute('cx', (32 + 27 * Math.cos(ra)).toFixed(2)); UI.orbitDot.setAttribute('cy', (32 + 27 * Math.sin(ra)).toFixed(2));
+
+  // Inside: 32 Hz → 20 kHz sweep
+  const f = 32 * Math.pow(20000 / 32, CHM.inside.p), [fv, fu] = fmtHz(f);
+  setText(UI.sweepHz, fv); setText(UI.sweepU, fu);
+  sweepScale.style.setProperty('--x', logPos(f).toFixed(4));
+  const lam = 343 / f; setText(UI.sweepLam, lam >= 1 ? `${lam.toFixed(1)} m` : lam >= .1 ? `${Math.round(lam * 100)} cm` : `${Math.round(lam * 1000)} mm`);
+  setText(UI.octN, Math.log2(f / 32).toFixed(1));
+
+  // Anatomy: parts counter + glass card
+  gapsFor(CHM.anatomy.p, uiGaps);
+  let sep = 1, latest = -1;
+  for (let k = 8; k >= 1; k--) if (uiGaps[k] > .5) { sep++; latest = k; }
+  setText(UI.partN, String(sep).padStart(2, '0'));
+  setText(UI.stackH, `${(stackTop(uiGaps) / 1.02).toFixed(1)}×`);
+  if (latest !== lastCard) {
+    lastCard = latest;
+    if (latest < 0) {
+      setText(UI.cardIdx, '—'); setText(UI.cardOf, 'Assembled'); setText(UI.cardName, 'CYMA One');
+      setText(UI.cardSpec, 'Nine machined parts. Zero visible fasteners.'); UI.cardBurst.innerHTML = '—';
+    } else {
+      const P = PARTS[latest];
+      setText(UI.cardIdx, String(latest + 1).padStart(2, '0')); setText(UI.cardOf, `Gap ${String(latest).padStart(2, '0')} / 08`);
+      setText(UI.cardName, P.name); setText(UI.cardSpec, P.spec);
+      UI.cardBurst.innerHTML = `<span class="swatch" style="--c:${PAINT[latest - 1]}"></span>${PAINT_NAMES[latest - 1]}`;
+    }
+  }
+}
+
+/* ================================================================ spectrum HUD */
+const barsEl = $('#bars'), NB = SMALL ? 28 : 44;
+const bars = Array.from({ length: NB }, (_, i) => {
+  const b = document.createElement('i'); b.style.backgroundSize = `${NB * 100}% 100%`; b.style.backgroundPosition = `${(i / (NB - 1) * 100).toFixed(2)}% 0`; barsEl.appendChild(b); return b;
+});
+const barV = new Float32Array(NB);
+let bassLevel = 0;
+function spectrum(dt) {
+  const gauss = (x, c, w) => Math.exp(-((x - c) ** 2) / (2 * w * w));
+  const real = analyser && soundOn;
+  if (real) analyser.getByteFrequencyData(fdata);
+  let air = 0; DELAY_C.forEach(dl => { if (S.T > dl + .004) air++; });
+  let low = 0;
+  for (let i = 0; i < NB; i++) {
+    const x = i / (NB - 1), lf = Math.log10(20) + x * 3;
+    const sh = .5 + .5 * Math.sin(elapsed * 7 + i * 1.9) * Math.sin(elapsed * 3.1 + i * .7);
+    let v = .035 + .045 * sh;
+    if (S.id === 'drop' || S.id === 'frozen') {
+      if (S.T >= 0) {
+        const A = S.id === 'frozen' ? .55 : Math.exp(-S.T * 1.6);
+        v += .95 * gauss(lf, 1.505, .16) * (.5 + .5 * A) + .45 * gauss(lf, 1.95, .22) * A + air / 8 * .3 * sh * smooth(.25, .9, x);
+      } else v += S.tremble * .14 * gauss(lf, 1.5, .3) * sh;
+    } else if (S.id === 'inside') {
+      const f = 32 * Math.pow(20000 / 32, CHM.inside.p);
+      v += .9 * gauss(lf, Math.log10(f), .11) + .18 * gauss(lf, 1.505, .2) + .12 * sh * x;
+    } else if (S.id === 'anatomy') {
+      v += x < (+UI.partN.textContent || 1) / 9 ? .22 + .26 * sh : 0;
+    } else v += .07 * sh * gauss(lf, 2.3, .8);
+    if (real) { const fq = 20 * Math.pow(1000, x), bin = Math.min(fdata.length - 1, Math.round(fq / (actx.sampleRate / 2) * fdata.length)); v = Math.max(v, fdata[bin] / 255); }
+    barV[i] = lerp(barV[i], clamp(v), 1 - Math.exp(-dt * 16));
+    bars[i].style.transform = `scaleY(${Math.max(.03, barV[i]).toFixed(3)})`;
+    if (x < .2) low = Math.max(low, barV[i]);
+  }
+  bassLevel = clamp(low - .2);
+}
+
+/* ================================================================ Web Audio 808 (sound off by default) */
+let actx = null, master, analyser = null, fdata, soundOn = false;
+function initAudio() {
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  master = actx.createGain(); master.gain.value = .9;
+  const comp = actx.createDynamicsCompressor(); comp.threshold.value = -8; comp.ratio.value = 4;
+  analyser = actx.createAnalyser(); analyser.fftSize = 2048; analyser.smoothingTimeConstant = .72;
+  fdata = new Uint8Array(analyser.frequencyBinCount);
+  master.connect(comp); comp.connect(analyser); analyser.connect(actx.destination);
+}
+function shaper(drive) { const n = 1024, c = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(x * drive) / Math.tanh(drive); } return c; }
+let hits808 = 0;
+function play808() {
+  if (!actx || !soundOn) return;
+  hits808++;
+  const t = actx.currentTime + .01;
+  const osc = actx.createOscillator(); osc.type = 'sine';
+  osc.frequency.setValueAtTime(165, t); osc.frequency.exponentialRampToValueAtTime(32, t + .16);
+  const ws = actx.createWaveShaper(); ws.curve = shaper(2.6); ws.oversample = '2x';
+  const g = actx.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(1, t + .006); g.gain.setTargetAtTime(.0001, t + .3, .95);
+  osc.connect(ws); ws.connect(g); g.connect(master); osc.start(t); osc.stop(t + 5);
+  const len = Math.floor(actx.sampleRate * .03), buf = actx.createBuffer(1, len, actx.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+  const ns = actx.createBufferSource(); ns.buffer = buf;
+  const hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800;
+  const ng = actx.createGain(); ng.gain.value = .35;
+  ns.connect(hp); hp.connect(ng); ng.connect(master); ns.start(t);
+}
+const sndBtn = $('#snd');
+sndBtn.addEventListener('click', () => {
+  if (!actx) initAudio();
+  soundOn = !soundOn; if (soundOn) actx.resume();
+  sndBtn.classList.toggle('on', soundOn); sndBtn.setAttribute('aria-pressed', soundOn);
+  setText($('#sndLbl'), soundOn ? 'Sound on' : 'Sound off');
+  setText(UI.hudSrc, soundOn ? 'Live' : 'Synth');
+});
+
+/* ================================================================ paint cursor */
+const fx = $('#fx'), fctx = fx.getContext('2d'), cursor = $('#cursor');
+function sizeFx() { const d = Math.min(devicePixelRatio || 1, 2); fx.width = Math.round(innerWidth * d); fx.height = Math.round(innerHeight * d); fctx.setTransform(d, 0, 0, d, 0, 0); }
+const drops = [], splats = [];
+let pmx = null, pmy = null, fxDirty = false;
+const pickCol = () => rgbCss(acc[(Math.random() * 3) | 0]);
+addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  const mx = e.clientX, my = e.clientY;
+  cursor.style.transform = `translate3d(${mx}px,${my}px,0)`; cursor.classList.add('on');
+  if (pmx !== null) {
+    const vx = mx - pmx, vy = my - pmy, n = Math.min(7, Math.floor(Math.hypot(vx, vy) / 6));
+    for (let i = 0; i < n && drops.length < 700; i++) {
+      const t = Math.random();
+      drops.push({ x: lerp(pmx, mx, t) + (Math.random() - .5) * 6, y: lerp(pmy, my, t) + (Math.random() - .5) * 6, vx: vx * 7 * Math.random() + (Math.random() - .5) * 90, vy: vy * 7 * Math.random() + (Math.random() - .5) * 90 - 40, r: .8 + Math.random() * 2.6, life: 0, max: .5 + Math.random() * .7, c: pickCol() });
+    }
+  }
+  pmx = mx; pmy = my;
+}, { passive: true });
+document.documentElement.addEventListener('pointerleave', () => { cursor.classList.remove('on'); pmx = null; });
+addEventListener('pointerover', e => cursor.classList.toggle('hot', !!e.target.closest?.('a,button')));
+addEventListener('pointerdown', e => {
+  const x = e.clientX, y = e.clientY, c = pickCol(), R = 14 + Math.random() * 16;
+  splats.push({ x, y, c, age: 0, pts: Array.from({ length: 22 }, () => R * (.78 + Math.random() * .4)),
+    sats: Array.from({ length: 12 }, () => { const a = Math.random() * 6.283, d = R * (1.25 + Math.random() * 1.7); return { x: Math.cos(a) * d, y: Math.sin(a) * d, r: 1.2 + Math.random() * R * .22 }; }) });
+  if (splats.length > 40) splats.shift();
+  for (let i = 0; i < 26; i++) { const a = Math.random() * 6.283, s = 160 + Math.random() * 520; drops.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 120, r: 1 + Math.random() * 3.2, life: 0, max: .45 + Math.random() * .6, c: Math.random() < .6 ? c : pickCol() }); }
+}, { passive: true });
+function drawFx(dt) {
+  if (!drops.length && !splats.length) { if (fxDirty) { fctx.clearRect(0, 0, innerWidth, innerHeight); fxDirty = false; } return; }
+  fxDirty = true;
+  fctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = splats.length - 1; i >= 0; i--) {
+    const s = splats[i]; s.age += dt;
+    const a = 1 - smooth(2.2, 4.5, s.age); if (a <= 0) { splats.splice(i, 1); continue; }
+    const grow = 1 - Math.pow(1 - Math.min(s.age / .12, 1), 3), n = s.pts.length;
+    const P = s.pts.map((r, k) => { const ang = k / n * 6.283; return [s.x + Math.cos(ang) * r * grow, s.y + Math.sin(ang) * r * grow]; });
+    fctx.globalAlpha = a; fctx.fillStyle = s.c; fctx.beginPath();
+    fctx.moveTo((P[n - 1][0] + P[0][0]) / 2, (P[n - 1][1] + P[0][1]) / 2);
+    for (let k = 0; k < n; k++) { const p0 = P[k], p1 = P[(k + 1) % n]; fctx.quadraticCurveTo(p0[0], p0[1], (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2); }
+    fctx.fill();
+    for (const t of s.sats) { fctx.beginPath(); fctx.arc(s.x + t.x * grow, s.y + t.y * grow, t.r, 0, 6.283); fctx.fill(); }
+  }
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i]; d.life += dt; if (d.life >= d.max) { drops.splice(i, 1); continue; }
+    d.vy += 900 * dt; d.vx *= .985; d.x += d.vx * dt; d.y += d.vy * dt;
+    const k = 1 - d.life / d.max;
+    fctx.globalAlpha = k; fctx.fillStyle = d.c; fctx.beginPath(); fctx.arc(d.x, d.y, d.r * (.4 + .6 * k), 0, 6.283); fctx.fill();
+  }
+  fctx.globalAlpha = 1;
+}
+
+/* ================================================================ specs count-up, finishes, CTA */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting || e.target.dataset.done) return;
+  e.target.dataset.done = 1;
+  const el = e.target, to = +el.dataset.count, dec = +(el.dataset.dec || 0), t0 = performance.now(), dur = 1700 + Math.random() * 500;
+  const step = now => { const k = clamp((now - t0) / dur), v = to * (1 - Math.pow(1 - k, 4)); el.textContent = v.toFixed(dec); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}), { threshold: .5 });
+$$('[data-count]').forEach(el => io.observe(el));
+
+$$('#fin button').forEach(b => b.addEventListener('click', () => {
+  $$('#fin button').forEach(x => x.classList.toggle('act', x === b));
+  finishTarget.set(FINISHES[b.dataset.f]); setText($('#finName'), b.dataset.f);
+}));
+const toast = $('#toast'); let toastT;
+$('#cta').addEventListener('click', () => {
+  toast.textContent = `CYMA One · ${$('#finName').textContent} is fictional. Nothing was reserved.`;
+  toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toast.classList.remove('show'), 2800);
+});
+
+/* ================================================================ Lenis + main loop */
+const lenis = window.Lenis ? new window.Lenis({ lerp: .085, wheelMultiplier: .9, smoothWheel: true }) : null;
+function onResize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  sizeFx(); measure(); lenis?.resize?.();
+}
+addEventListener('resize', onResize);
+new ResizeObserver(measure).observe(document.body);
+document.fonts?.ready.then(measure);
+addEventListener('load', measure);
+onResize();
+
+let loopMs = 0, last = performance.now(), frame = 0, lastDropT = -1, curAI = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  const tStart = performance.now();
+  const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now; elapsed += dt; frame++;
+  lenis?.raf(now);
+  const y = window.scrollY, vh = innerHeight;
+  let ai = 0;
+  for (let i = 0; i < CH.length; i++) if (y >= CH[i].top - vh * .5) ai = i;
+  for (const c of CH) {
+    c.p = clamp((y - c.top) / Math.max(1, c.h - vh));
+    if (!c.pin) continue;
+    const q = clamp((y - (c.top - vh)) / vh);
+    const v = c.id === 'hero' ? 1 - smooth(.8, 1, c.p) : smooth(.45, 1, q) * (1 - smooth(.93, 1, c.p));
+    if (Math.abs(v - c.inV) > .001) { c.inV = v; c.pin.style.setProperty('--in', v.toFixed(3)); }
+  }
+  curAI = ai;
+  const A = CH[ai];
+  computeState(A.id, A.p);
+  if (A.id === 'drop') { if (lastDropT < 0 && S.T >= 0) play808(); lastDropT = S.T; } else lastDropT = ai < DROP_I ? -1 : 1;
+  applyScene(dt);
+  renderer.render(scene, camera);
+  if (frame % 6 === 1) sampleAccent(); // read pixels in the same task as the render
+  pushAccent(dt);
+  spectrum(dt);
+  updateUI(A, ai);
+  drawFx(dt);
+  loopMs = lerp(loopMs, performance.now() - tStart, .2);
+}
+requestAnimationFrame(loop);
+
+// handy for checking any chapter mid-scroll: cyma.go('frozen', .5)
+window.cyma = {
+  go(id, p = .5) { measure(); const c = CHM[id]; const y = c.top + (c.pin ? p * (c.h - innerHeight) : p * c.h); lenis ? lenis.scrollTo(y, { immediate: true, force: true }) : scrollTo(0, y); },
+  audio: () => ({ ctx: actx?.state ?? 'none', soundOn, hits: hits808 }),
+  state: () => ({ chapter: CH[curAI].id, p: +CH[curAI].p.toFixed(3), T: +S.T.toFixed(3), accent: acc.map(rgbCss), particles: NP + NT * RV, sample: lastSample, cpuMs: +loopMs.toFixed(2) }),
+};
+</script>
+</body>
+</html>
