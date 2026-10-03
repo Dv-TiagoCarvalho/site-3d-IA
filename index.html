@@ -748,8 +748,8 @@ function computeState(id, p) {
     S.cam.set(0, 2.4 + top * .5, 7.8 + top * 1.15); S.tgt.set(0, .3 + top * .47, 0); S.damp = 10;
   } else {
     S.rot = elapsed * .16;
-    const shift = id === 'buy' && innerWidth > 900 ? -2 : 0;
-    S.cam.set(shift * .4, 3.2, 8.8); S.tgt.set(shift, .85, 0); S.damp = 3;
+    const shift = id === 'buy' && innerWidth > 900 ? -1.6 : 0;
+    S.cam.set(shift * .4, 3.6, 11); S.tgt.set(shift, .7, 0); S.damp = 3;
   }
 }
 
@@ -1131,6 +1131,12 @@ window.cyma = {
   audio: () => ({ ctx: actx?.state ?? 'none', soundOn, hits: hits808 }),
   state: () => ({ chapter: CH[curAI].id, p: +CH[curAI].p.toFixed(3), T: +S.T.toFixed(3), accent: acc.map(rgbCss), particles: NP + NT * RV, sample: lastSample, cpuMs: +loopMs.toFixed(2) }),
 };
+
+// deep links: ?go=frozen&p=0.4&palette=Neon&finish=Cobalt
+const query = new URLSearchParams(location.search);
+if (query.get('palette') in PALETTES) setPalette(query.get('palette'));
+if (query.get('finish') in FINISHES) $(`#fin [data-f="${query.get('finish')}"]`)?.click();
+if (CHM[query.get('go')]) addEventListener('load', () => setTimeout(() => cyma.go(query.get('go'), +(query.get('p') ?? .5)), 300));
 </script>
 </body>
 </html>
